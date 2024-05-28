@@ -23,6 +23,7 @@ from .node import NodeMixin  # noqa
 from .node import SymlinkNode  # noqa
 from .node import SymlinkNodeMixin  # noqa
 from .node import TreeError  # noqa
+from .node import TypedNode  # noqa
 from .render import AbstractStyle  # noqa
 from .render import AsciiStyle  # noqa
 from .render import ContRoundStyle  # noqa

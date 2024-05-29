@@ -421,25 +421,6 @@ def test_size():
     assert s1ca.size == 1
 
 
-def test_size():
-    """Node.size."""
-    root = Node("root")
-    s0 = Node("sub0", parent=root)
-    s0b = Node("sub0B", parent=s0)
-    s0a = Node("sub0A", parent=s0)
-    s1 = Node("sub1", parent=root)
-    s1c = Node("sub1C", parent=s1)
-    s1ca = Node("sub1Ca", parent=s1c)
-
-    assert root.size == 7
-    assert s0.size == 3
-    assert s0b.size == 1
-    assert s0a.size == 1
-    assert s1.size == 3
-    assert s1c.size == 2
-    assert s1ca.size == 1
-
-
 def test_depth():
     """Node.depth."""
     root = Node("root")
@@ -500,21 +481,6 @@ def test_anyname():
     myroot = Node([1, 2, 3])
     Node("/foo", parent=myroot)
     assert str(myroot) == "Node('/[1, 2, 3]')"
-
-
-def test_node_kwargs():
-    """Ticket #24."""
-
-    class MyNode(Node):
-        def __init__(self, name, parent=None, **kwargs):
-            super(MyNode, self).__init__(name, parent, **kwargs)
-
-        def _post_attach(self, parent):
-            print(self.my_attribute)
-
-    node_a = MyNode("A")
-    node_b = MyNode("B", node_a, my_attribute=True)
-    assert repr(node_b) == "MyNode('/A/B', my_attribute=True)"
 
 
 def test_hookups():

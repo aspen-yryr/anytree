@@ -1,7 +1,6 @@
 """Helper Methods for testing."""
-from contextlib import contextmanager
 
-import six
+from contextlib import contextmanager
 
 
 def eq_(one, other):

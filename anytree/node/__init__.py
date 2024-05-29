@@ -17,3 +17,5 @@ from .node import Node  # noqa
 from .nodemixin import NodeMixin  # noqa
 from .symlinknode import SymlinkNode  # noqa
 from .symlinknodemixin import SymlinkNodeMixin  # noqa
+from .typed_node import TypedNode  # noqa
+from .mutual_link import MutualLink  # noqa

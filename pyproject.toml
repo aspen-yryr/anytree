@@ -32,7 +32,7 @@ classifiers = [
 "Bug Tracker" = "https://github.com/c0fec0de/anytree/issues"
 
 [tool.poetry.dependencies]
-python = ">= 3.7.2, < 4"
+python = ">= 3.8, < 4"
 six = '*'
 
 [tool.poetry.group.test.dependencies]
@@ -43,6 +43,7 @@ pylint = '^2.15'
 pytest = '^6.2'
 pyyaml = ">=6.0"
 
+pytest-mock = "^3.14.0"
 [tool.poetry.group.doc.dependencies]
 sphinx = '*'
 

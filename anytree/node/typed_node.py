@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from typing import Optional
+from typing import Generic, Optional, TypeVar
 import warnings
+
+from pydantic import BaseModel
 
 from anytree.iterators import PreOrderIter
 
@@ -10,14 +12,16 @@ from .exceptions import LoopError, TreeError
 from .lightnodemixin import LightNodeMixin
 from .mutual_link import MutualLink
 
+T = TypeVar("T", bound=BaseModel)
 
-class TypedNode:
 
-    separator = "/"
-
-    def __init__(self, parent: Optional["TypedNode"] = None, children: Optional[list["TypedNode"]] = None):
-        self.__parent_link: Optional[MutualLink["TypedNode"]] = None
-        self.__child_links: list[MutualLink["TypedNode"]] = []
+class TypedNode(Generic[T]):
+    def __init__(
+        self, value: T, parent: Optional["TypedNode[T]"] = None, children: Optional[list["TypedNode[T]"]] = None
+    ):
+        self.value = value
+        self.__parent_link: Optional[MutualLink["TypedNode[T]"]] = None
+        self.__child_links: list[MutualLink["TypedNode[T]"]] = []
 
         if parent is not None:
             self.parent = parent
@@ -26,11 +30,11 @@ class TypedNode:
             self.children = children
 
     @property
-    def parent(self) -> Optional["TypedNode"]:
+    def parent(self) -> Optional["TypedNode[T]"]:
         return self.__parent_link.left if self.__parent_link is not None else None
 
     @parent.setter
-    def parent(self, parent: "TypedNode"):
+    def parent(self, parent: "TypedNode[T]"):
         self.__check_loop(parent)
         if self.parent is not parent:
             self.__detach()
@@ -41,7 +45,7 @@ class TypedNode:
         if self.parent is not None:
             self.__detach()
 
-    def __check_loop(self, parent: "TypedNode"):
+    def __check_loop(self, parent: "TypedNode[T]"):
         if parent is self:
             msg = "Cannot set parent. %r cannot be parent of itself."
             raise LoopError(msg % (self,))
@@ -66,7 +70,7 @@ class TypedNode:
 
         self._post_detach(parent)
 
-    def __attach(self, parent: "TypedNode"):
+    def __attach(self, parent: "TypedNode[T]"):
         assert not any(child is self for child in parent.children), "Tree is corrupt."
         self._pre_attach(parent)
 
@@ -84,7 +88,7 @@ class TypedNode:
         return list(filter(lambda x: x is not None, [link.right for link in self.__child_links]))
 
     @staticmethod
-    def __check_children(children: list["TypedNode"]):
+    def __check_children(children: list["TypedNode[T]"]):
         seen = set()
         for child in children:
             childid = id(child)
@@ -95,7 +99,7 @@ class TypedNode:
                 raise TreeError(msg)
 
     @children.setter
-    def children(self, children: list["TypedNode"]):
+    def children(self, children: list["TypedNode[T]"]):
         TypedNode.__check_children(children)
 
         # ATOMIC start
@@ -116,16 +120,16 @@ class TypedNode:
             del child.parent
         self._post_detach_children(children)
 
-    def _pre_detach_children(self, children: list["TypedNode"]) -> None:
+    def _pre_detach_children(self, children: list["TypedNode[T]"]) -> None:
         """Method call before detaching `children`."""
 
-    def _post_detach_children(self, children: list["TypedNode"]) -> None:
+    def _post_detach_children(self, children: list["TypedNode[T]"]) -> None:
         """Method call after detaching `children`."""
 
-    def _pre_attach_children(self, children: list["TypedNode"]) -> None:
+    def _pre_attach_children(self, children: list["TypedNode[T]"]) -> None:
         """Method call before attaching `children`."""
 
-    def _post_attach_children(self, children: list["TypedNode"]) -> None:
+    def _post_attach_children(self, children: list["TypedNode[T]"]) -> None:
         """Method call after attaching `children`."""
 
     @property
@@ -173,11 +177,11 @@ class TypedNode:
             node = node.parent
 
     @property
-    def _path(self) -> list["TypedNode"]:
+    def _path(self) -> list["TypedNode[T]"]:
         return list(reversed(list(self.iter_path_reverse())))
 
     @property
-    def ancestors(self) -> list["TypedNode"]:
+    def ancestors(self) -> list["TypedNode[T]"]:
         """
         All parent nodes and their parent nodes.
 
@@ -197,7 +201,7 @@ class TypedNode:
         return self.parent.path
 
     @property
-    def descendants(self) -> list["TypedNode"]:
+    def descendants(self) -> list["TypedNode[T]"]:
         """
         All child nodes and all their child nodes.
 
@@ -217,7 +221,7 @@ class TypedNode:
         return list(PreOrderIter(self))[1:]
 
     @property
-    def root(self) -> "TypedNode":
+    def root(self) -> "TypedNode[T]":
         """
         Tree Root Node.
 
@@ -238,13 +242,13 @@ class TypedNode:
         return node
 
     @property
-    def siblings(self) -> list["TypedNode"]:
+    def siblings(self) -> list["TypedNode[T]"]:
         if self.parent is None:
             return []
         return list(node for node in self.parent.children if node is not self)
 
     @property
-    def leaves(self) -> list["TypedNode"]:
+    def leaves(self) -> list["TypedNode[T]"]:
         return list(PreOrderIter(self, filter_=lambda node: node.is_leaf))
 
     @property
@@ -338,14 +342,14 @@ class TypedNode:
             continue
         return size
 
-    def _pre_detach(self, parent: "TypedNode"):
+    def _pre_detach(self, parent: "TypedNode[T]"):
         """Method call before detaching from `parent`."""
 
-    def _post_detach(self, parent: "TypedNode"):
+    def _post_detach(self, parent: "TypedNode[T]"):
         """Method call after detaching from `parent`."""
 
-    def _pre_attach(self, parent: "TypedNode"):
+    def _pre_attach(self, parent: "TypedNode[T]"):
         """Method call before attaching to `parent`."""
 
-    def _post_attach(self, parent: "TypedNode"):
+    def _post_attach(self, parent: "TypedNode[T]"):
         """Method call after attaching to `parent`."""

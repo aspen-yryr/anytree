@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*-
+from pydantic import BaseModel
 from anytree import AnyNode, LoopError, NodeMixin, PostOrderIter, PreOrderIter, TreeError, TypedNode
 
 import pytest
 from pytest_mock import mocker, MockerFixture
 
 
+class M1(BaseModel):
+    name: str
+
+
 def test_parent_child():
     """A tree parent and child attributes."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1a = TypedNode(parent=s1)
-    s1b = TypedNode(parent=s1)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"), parent=None)
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1a = TypedNode(value=M1(name="s1a"), parent=s1)
+    s1b = TypedNode(value=M1(name="s1b"), parent=s1)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     del root.parent
 
@@ -111,15 +116,15 @@ def test_parent_child():
 
 def test_detach_children():
 
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1a = TypedNode(parent=s1)
-    s1b = TypedNode(parent=s1)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name=""), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1a = TypedNode(value=M1(name="s1a"), parent=s1)
+    s1b = TypedNode(value=M1(name="s1b"), parent=s1)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.descendants == [s0, s0b, s0a, s1, s1a, s1b, s1c, s1ca]
     del s0.children
@@ -130,10 +135,10 @@ def test_detach_children():
 
 def test_children_setter():
 
-    root = TypedNode()
-    s0 = TypedNode()
-    s1 = TypedNode()
-    s0a = TypedNode()
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"))
+    s1 = TypedNode(value=M1(name="s1"))
+    s0a = TypedNode(value=M1(name="s0a"))
 
     root.children = [s0, s1]
     s0.children = [s0a]
@@ -160,14 +165,14 @@ def test_children_setter():
 
 def test_children_setter_large():
 
-    root = TypedNode()
-    s0 = TypedNode()
-    s0b = TypedNode()
-    s0a = TypedNode()
-    s1 = TypedNode()
-    s1a = TypedNode()
-    s1b = TypedNode()
-    s1c = TypedNode()
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"))
+    s0b = TypedNode(value=M1(name="s0b"))
+    s0a = TypedNode(value=M1(name="s0a"))
+    s1 = TypedNode(value=M1(name="s1"))
+    s1a = TypedNode(value=M1(name="s1a"))
+    s1b = TypedNode(value=M1(name="s1b"))
+    s1c = TypedNode(value=M1(name="s1c"))
 
     root.children = [s0, s1]
     assert root.descendants == [s0, s1]
@@ -179,8 +184,8 @@ def test_children_setter_large():
 
 def test_node_children_multiple():
 
-    root = TypedNode()
-    sub = TypedNode()
+    root = TypedNode(value=M1(name="root"))
+    sub = TypedNode(value=M1(name="sub"))
     # with assert_raises(TreeError, "Cannot add node Node('/sub') multiple times as child."):
     with pytest.raises(TreeError):
         root.children = [sub, sub]
@@ -188,10 +193,10 @@ def test_node_children_multiple():
 
 def test_recursion_detection():
     """Recursion detection."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    TypedNode(value=M1(name=""), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
 
     # try recursion
     assert root.parent is None
@@ -211,13 +216,13 @@ def test_recursion_detection():
 
 def test_ancestors():
     """Node.ancestors."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.ancestors == []
     assert s0.ancestors == [root]
@@ -228,11 +233,11 @@ def test_ancestors():
 
 def test_node_children_init():
     """Node With Children Attribute."""
-    c1_1 = TypedNode()
-    c1 = TypedNode(children=[c1_1])
-    c2 = TypedNode()
+    c1_1 = TypedNode(value=M1(name="c1_1"))
+    c1 = TypedNode(value=M1(name="c1"), children=[c1_1])
+    c2 = TypedNode(value=M1(name="c2"))
 
-    root = TypedNode(children=[c1, c2])
+    root = TypedNode(value=M1(name="root"), children=[c1, c2])
 
     assert root.children == [c1, c2]
     assert c1.children == [c1_1]
@@ -246,13 +251,13 @@ def test_node_children_init():
 
 def test_descendants():
     """Node.descendants."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.descendants == [s0, s0b, s0a, s1, s1c, s1ca]
     assert s1.descendants == [s1c, s1ca]
@@ -262,13 +267,13 @@ def test_descendants():
 
 def test_root():
     """Node.root."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.root == root
     assert s0.root == root
@@ -281,13 +286,13 @@ def test_root():
 
 def test_siblings():
     """Node.siblings."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.siblings == []
     assert s0.siblings == [s1]
@@ -300,13 +305,13 @@ def test_siblings():
 
 def test_is_leaf():
     """Node.is_leaf."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.is_leaf is False
     assert s0.is_leaf is False
@@ -319,13 +324,13 @@ def test_is_leaf():
 
 def test_leaves():
     """Node.leaves."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.leaves == [s0b, s0a, s1ca]
     assert s0.leaves == [s0b, s0a]
@@ -338,13 +343,13 @@ def test_leaves():
 
 def test_is_root():
     """Node.is_root."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.is_root is True
     assert s0.is_root is False
@@ -357,13 +362,13 @@ def test_is_root():
 
 def test_height():
     """Node.height."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.height == 3
     assert s0.height == 1
@@ -376,13 +381,13 @@ def test_height():
 
 def test_size():
     """Node.size."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.size == 7
     assert s0.size == 3
@@ -395,13 +400,13 @@ def test_size():
 
 def test_depth():
     """Node.depth."""
-    root = TypedNode()
-    s0 = TypedNode(parent=root)
-    s0b = TypedNode(parent=s0)
-    s0a = TypedNode(parent=s0)
-    s1 = TypedNode(parent=root)
-    s1c = TypedNode(parent=s1)
-    s1ca = TypedNode(parent=s1c)
+    root = TypedNode(value=M1(name="root"))
+    s0 = TypedNode(value=M1(name="s0"), parent=root)
+    s0b = TypedNode(value=M1(name="s0b"), parent=s0)
+    s0a = TypedNode(value=M1(name="s0a"), parent=s0)
+    s1 = TypedNode(value=M1(name="s1"), parent=root)
+    s1c = TypedNode(value=M1(name="s1c"), parent=s1)
+    s1ca = TypedNode(value=M1(name="s1ca"), parent=s1c)
 
     assert root.depth == 0
     assert s0.depth == 1
@@ -414,36 +419,36 @@ def test_depth():
 
 def test_parent():
     """Parent attribute."""
-    foo = TypedNode()
+    foo = TypedNode(value=M1(name="foo"))
     assert foo.parent is None
 
 
 def test_pre_order_iter():
     """Pre-Order Iterator."""
-    f = TypedNode()
-    b = TypedNode(parent=f)
-    a = TypedNode(parent=b)
-    d = TypedNode(parent=b)
-    c = TypedNode(parent=d)
-    e = TypedNode(parent=d)
-    g = TypedNode(parent=f)
-    i = TypedNode(parent=g)
-    h = TypedNode(parent=i)
+    f = TypedNode(value=M1(name="f"))
+    b = TypedNode(value=M1(name="b"), parent=f)
+    a = TypedNode(value=M1(name="a"), parent=b)
+    d = TypedNode(value=M1(name="d"), parent=b)
+    c = TypedNode(value=M1(name="c"), parent=d)
+    e = TypedNode(value=M1(name="e"), parent=d)
+    g = TypedNode(value=M1(name="g"), parent=f)
+    i = TypedNode(value=M1(name="i"), parent=g)
+    h = TypedNode(value=M1(name="h"), parent=i)
 
     assert [node for node in PreOrderIter(f)] == [f, b, a, d, c, e, g, i, h]
 
 
 def test_post_order_iter():
     """Post-Order Iterator."""
-    f = TypedNode()
-    b = TypedNode(parent=f)
-    a = TypedNode(parent=b)
-    d = TypedNode(parent=b)
-    c = TypedNode(parent=d)
-    e = TypedNode(parent=d)
-    g = TypedNode(parent=f)
-    i = TypedNode(parent=g)
-    h = TypedNode(parent=i)
+    f = TypedNode(value=M1(name="f"))
+    b = TypedNode(value=M1(name="b"), parent=f)
+    a = TypedNode(value=M1(name="a"), parent=b)
+    d = TypedNode(value=M1(name="d"), parent=b)
+    c = TypedNode(value=M1(name="c"), parent=d)
+    e = TypedNode(value=M1(name="e"), parent=d)
+    g = TypedNode(value=M1(name="g"), parent=f)
+    i = TypedNode(value=M1(name="i"), parent=g)
+    h = TypedNode(value=M1(name="h"), parent=i)
 
     assert [node for node in PostOrderIter(f)] == [a, c, e, d, b, h, i, g, f]
 
@@ -455,66 +460,71 @@ def test_post_order_iter():
 #     assert str(myroot) == "Node('/[1, 2, 3]')"
 
 
-# def test_hookups(mocker: MockerFixture):
-#     """Hookup attributes #29."""
+def test_hookups(mocker: MockerFixture):
+    """Hookup attributes #29."""
 
-#     class MyNode(TypedNode):
-#         def _pre_attach(self, parent):
-#             pass
-#             # assert self.parent is None
-#             # assert self.children == tuple()
-#             # assert str(self.path) == "(MyNode('/B'),)"
+    class MyNode(TypedNode[M1]):
+        def _pre_attach(self, parent):
+            pass
+            # assert self.parent is None
+            # assert self.children == tuple()
+            # assert str(self.path) == "(MyNode('/B'),)"
 
-#         def _post_attach(self, parent):
-#             # assert str(self.parent) == "MyNode('/A')"
-#             # assert self.children == tuple()
-#             # assert str(self.path) == "(MyNode('/A'), MyNode('/A/B'))"
-#             pass
+        def _post_attach(self, parent):
+            # assert str(self.parent) == "MyNode('/A')"
+            # assert self.children == tuple()
+            # assert str(self.path) == "(MyNode('/A'), MyNode('/A/B'))"
+            pass
 
-#         def _pre_detach(self, parent):
-#             # assert str(self.parent) == "MyNode('/A')"
-#             # assert self.children == tuple()
-#             # assert str(self.path) == "(MyNode('/A'), MyNode('/A/B'))"
-#             pass
+        def _pre_detach(self, parent):
+            # assert str(self.parent) == "MyNode('/A')"
+            # assert self.children == tuple()
+            # assert str(self.path) == "(MyNode('/A'), MyNode('/A/B'))"
+            pass
 
-#         def _post_detach(self, parent):
-#             # assert str(self.parent) == "None"
-#             # assert self.children == tuple()
-#             # assert str(self.path) == "(MyNode('/B'),)"
-#             pass
+        def _post_detach(self, parent):
+            # assert str(self.parent) == "None"
+            # assert self.children == tuple()
+            # assert str(self.path) == "(MyNode('/B'),)"
+            pass
 
-#     node_a = MyNode()
-#     node_b = mocker.MagicMock(MyNode)(node_a)
+    node_a = MyNode(value=M1(name="A"))
+    pre_attach_mock = mocker.patch.object(MyNode, "_pre_attach")
+    post_attach_mock = mocker.patch.object(MyNode, "_post_attach")
+    pre_detach_mock = mocker.patch.object(MyNode, "_pre_detach")
+    post_detach_mock = mocker.patch.object(MyNode, "_post_detach")
 
-#     # node_b = MyNode(node_a)  # attach B on A
+    node_b = MyNode(value=M1(name="B"), parent=node_a)
+    pre_attach_mock.assert_called_once_with(node_a)
+    post_attach_mock.assert_called_once_with(node_a)
 
-#     node_b._pre_attach.assert_called_once()
+    # node_b.parent = None  # detach B from A
+    del node_b.parent  # detach B from A
+    pre_detach_mock.assert_called_once()
+    post_detach_mock.assert_called_once()
 
-#     # node_b.parent = None  # detach B from A
-#     del node_b.parent  # detach B from A
 
+# def test_eq_overwrite():
+#     """Node with overwritten __eq__."""
 
-def test_eq_overwrite():
-    """Node with overwritten __eq__."""
+#     class EqOverwrittingNode(TypedNode[M1]):
+#         def __init__(self, a, b, parent=None):
+#             super(EqOverwrittingNode, self).__init__(parent)
+#             self.a = a
+#             self.b = b
 
-    class EqOverwrittingNode(TypedNode):
-        def __init__(self, a, b, parent=None):
-            super(EqOverwrittingNode, self).__init__(parent)
-            self.a = a
-            self.b = b
+#         def __eq__(self, other: "EqOverwrittingNode"):
+#             return self.a == other.a and self.b == other.b
+#             # if isinstance(other, EqOverwrittingNode):
+#             # else:
+#             #     return NotImplemented
 
-        def __eq__(self, other: "EqOverwrittingNode"):
-            return self.a == other.a and self.b == other.b
-            # if isinstance(other, EqOverwrittingNode):
-            # else:
-            #     return NotImplemented
-
-    r = EqOverwrittingNode(0, 0)
-    a = EqOverwrittingNode(1, 0, parent=r)
-    b = EqOverwrittingNode(1, 0, parent=r)
-    assert a.parent is r
-    assert b.parent is r
-    assert a.a == 1
-    assert a.b == 0
-    assert b.a == 1
-    assert b.b == 0
+#     r = EqOverwrittingNode(0, 0)
+#     a = EqOverwrittingNode(1, 0, parent=r)
+#     b = EqOverwrittingNode(1, 0, parent=r)
+#     assert a.parent is r
+#     assert b.parent is r
+#     assert a.a == 1
+#     assert a.b == 0
+#     assert b.a == 1
+#     assert b.b == 0

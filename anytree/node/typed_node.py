@@ -8,6 +8,7 @@ from anytree.iterators import PreOrderIter
 from ..config import ASSERTIONS
 from .exceptions import LoopError, TreeError
 from .lightnodemixin import LightNodeMixin
+from .mutual_link import MutualLink
 
 
 class TypedNode:
@@ -15,8 +16,8 @@ class TypedNode:
     separator = "/"
 
     def __init__(self, parent: Optional["TypedNode"] = None, children: Optional[list["TypedNode"]] = None):
-        self.__parent: Optional["TypedNode"] = None
-        self.__children: list["TypedNode"] = []
+        self.__parent_link: Optional[MutualLink["TypedNode"]] = None
+        self.__child_links: list[MutualLink["TypedNode"]] = []
 
         if parent is not None:
             self.parent = parent
@@ -26,39 +27,41 @@ class TypedNode:
 
     @property
     def parent(self) -> Optional["TypedNode"]:
-        return self.__parent
+        return self.__parent_link.left if self.__parent_link is not None else None
 
     @parent.setter
-    def parent(self, parent_: "TypedNode"):
-        self.__check_loop(parent_)
-        if self.__parent is not parent_:
+    def parent(self, parent: "TypedNode"):
+        self.__check_loop(parent)
+        if self.parent is not parent:
             self.__detach()
-            self.__attach(parent_)
+            self.__attach(parent)
 
     @parent.deleter
     def parent(self):
-        if self.__parent is not None:
+        if self.parent is not None:
             self.__detach()
 
-    def __check_loop(self, node: "TypedNode"):
-        if node is self:
+    def __check_loop(self, parent: "TypedNode"):
+        if parent is self:
             msg = "Cannot set parent. %r cannot be parent of itself."
             raise LoopError(msg % (self,))
-        if any(child is self for child in node.iter_path_reverse()):
+        if any(pc is self for pc in parent.ancestors):
             msg = "Cannot set parent. %r is parent of %r."
-            raise LoopError(msg % (self, node))
+            raise LoopError(msg % (self, parent))
 
     def __detach(self):
-        parent = self.parent
-        if parent is None:
+        if self.__parent_link is None:
             return
-        assert any(child is self for child in parent.children), "Tree is corrupt."
+
+        parent_link = self.__parent_link
+        parent = parent_link.left
+        assert parent is not None, "Tree is corrupt."
 
         self._pre_detach(parent)
 
         # ATOMIC START
-        parent.__children = [child for child in parent.children if child is not self]
-        self.__parent = None
+        parent.__child_links.remove(parent_link)
+        self.__parent_link = None
         # ATOMIC END
 
         self._post_detach(parent)
@@ -67,20 +70,18 @@ class TypedNode:
         assert not any(child is self for child in parent.children), "Tree is corrupt."
         self._pre_attach(parent)
 
+        new_link = MutualLink(left=parent, right=self)
+
         # ATOMIC START
-        parent.__children.append(self)
-        self.__parent = parent
+        self.__parent_link = new_link
+        parent.__child_links.append(new_link)
         # ATOMIC END
 
         self._post_attach(parent)
 
     @property
     def children(self):
-        return self.__children
-
-    # def __append_child(self, child: "TypedNode"):
-    #     self.__children.append(child)
-    #     child.__parent = self
+        return list(filter(lambda x: x is not None, [link.right for link in self.__child_links]))
 
     @staticmethod
     def __check_children(children: list["TypedNode"]):
@@ -105,13 +106,13 @@ class TypedNode:
         for child in children:
             child.parent = self
         self._post_attach_children(children)
-        assert len(self.__children) == len(children)
+        assert len(self.children) == len(children)
 
     @children.deleter
     def children(self):
         children = self.children
         self._pre_detach_children(children)
-        for child in self.__children:
+        for child in self.children:
             del child.parent
         self._post_detach_children(children)
 
@@ -284,10 +285,10 @@ class TypedNode:
         >>> lian.height
         0
         """
-        if len(self.__children) == 0:
+        if len(self.children) == 0:
             return 0
         else:
-            return max(child.height for child in self.__children) + 1
+            return max(child.height for child in self.children) + 1
 
     @property
     def depth(self):

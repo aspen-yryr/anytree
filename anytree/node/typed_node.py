@@ -29,17 +29,16 @@ class TypedNode:
         return self.__parent
 
     @parent.setter
-    def parent(self, value: "TypedNode"):
-        if self.__parent is not value:
-            self.__check_loop(value)
-            if self.__parent is not None:
-                self.__detach(self.__parent)
-            self.__attach(value)
+    def parent(self, parent_: "TypedNode"):
+        self.__check_loop(parent_)
+        if self.__parent is not parent_:
+            self.__detach()
+            self.__attach(parent_)
 
     @parent.deleter
     def parent(self):
         if self.__parent is not None:
-            self.__detach(self.__parent)
+            self.__detach()
 
     def __check_loop(self, node: "TypedNode"):
         if node is self:
@@ -49,7 +48,12 @@ class TypedNode:
             msg = "Cannot set parent. %r is parent of %r."
             raise LoopError(msg % (self, node))
 
-    def __detach(self, parent: "TypedNode"):
+    def __detach(self):
+        parent = self.parent
+        if parent is None:
+            return
+        assert any(child is self for child in parent.children), "Tree is corrupt."
+
         self._pre_detach(parent)
 
         # ATOMIC START
@@ -94,24 +98,20 @@ class TypedNode:
         TypedNode.__check_children(children)
 
         # ATOMIC start
-        old_children = self.__children
-        del self.children
-        try:
-            self._pre_attach_children(children)
-            for child in children:
-                child.parent = self
-            self._post_attach_children(children)
-            assert len(self.__children) == len(children)
-        except Exception:
-            self.children = old_children
-            raise
-        # ATOMIC end
+        for child in children:
+            child.__check_loop(self)
+
+        self._pre_attach_children(children)
+        for child in children:
+            child.parent = self
+        self._post_attach_children(children)
+        assert len(self.__children) == len(children)
 
     @children.deleter
     def children(self):
         children = self.children
         self._pre_detach_children(children)
-        for child in self.children:
+        for child in self.__children:
             del child.parent
         self._post_detach_children(children)
 

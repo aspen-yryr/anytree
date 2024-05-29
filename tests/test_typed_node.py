@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from anytree import AnyNode, LoopError, NodeMixin, PostOrderIter, PreOrderIter, TreeError, TypedNode
 
-from .helper import assert_raises
 import pytest
 from pytest_mock import mocker, MockerFixture
 
@@ -17,6 +16,8 @@ def test_parent_child():
     s1b = TypedNode(parent=s1)
     s1c = TypedNode(parent=s1)
     s1ca = TypedNode(parent=s1c)
+
+    del root.parent
 
     assert root.parent is None
     assert root.children == [s0, s1]
@@ -102,6 +103,10 @@ def test_parent_child():
     assert s1c.children == []
     assert s1ca.parent == s0
     assert s1ca.children == []
+
+    del s1a.parent
+
+    assert s1a.parent is None
 
 
 def test_detach_children():
